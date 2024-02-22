@@ -8,11 +8,15 @@ resource "aws_instance" "vm1" {
   instance_type = "t2.micro"
 }
 
-output "somearn" {
-  value       = "aws_instance.vm1.arn"
+output "arn" {
+  value       = aws_instance.vm1[*].arn
   description = "testing output"
 }
 
-output "anotheroutput" {
-  value = aws_instance.vm1.host_id
+output "ID" {
+  value = aws_instance.vm1[*].id
+}
+
+output "privateIP" {
+  value = aws_instance.vm1[*].private_ip
 }
