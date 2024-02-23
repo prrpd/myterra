@@ -1,7 +1,12 @@
 provider "aws" {
   region = "us-east-2"
+  default_tags {
+    tags = {
+      Owner     = "terra-test"
+      ManagedBy = "Terraform"
+    }
+  }
 }
-
 resource "aws_instance" "vm1" {
   count                  = var.instanceCount
   ami                    = var.ami
