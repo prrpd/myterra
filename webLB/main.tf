@@ -38,8 +38,8 @@ resource "aws_security_group" "elb_web_sg" {
   }
 }
 
-
-resource "aws_security_group" "ec2_web_sg" { #allow traffic to instances from ELB only
+#allow traffic to instances from ELB only
+resource "aws_security_group" "ec2_web_sg" {
   name        = "ec2_web_sg"
   description = "allow access for ELB"
   ingress {
@@ -109,7 +109,8 @@ resource "aws_elb" "web-elb" {
   }
 }
 
-resource "aws_default_subnet" "default_az1" { # для ВМок за балансировщиком публичные IP не нужны, поэтому лучше их не назначать. А назначение настраивается в subnet, в этом ресурсе не получится такое настроить, поэтому, возможно, лучше сделать новые сабнеты и там настроить
+# для ВМок за балансировщиком публичные IP не нужны, поэтому лучше их не назначать. А назначение настраивается в subnet, в этом ресурсе не получится такое настроить, поэтому, возможно, лучше сделать новые сабнеты и там настроить
+resource "aws_default_subnet" "default_az1" {
   availability_zone = data.aws_availability_zones.az_zones.names[0]
 }
 
