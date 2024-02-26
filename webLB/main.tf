@@ -38,6 +38,7 @@ resource "aws_security_group" "elb_web_sg" {
   }
 }
 
+/*
 resource "aws_security_group" "ec2_web_sg" {
   name_prefix = "ec2_web_sg - "
   dynamic "ingress" {
@@ -56,7 +57,7 @@ resource "aws_security_group" "ec2_web_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-
+*/
 resource "aws_launch_configuration" "web_lc" {
   name_prefix     = "LC web - "
   instance_type   = "t2.micro"
