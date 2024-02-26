@@ -76,7 +76,7 @@ resource "aws_launch_configuration" "web_lc" {
 }
 
 resource "aws_autoscaling_group" "asg_web" {
-  name                 = "ASG-${aws_launch_configuration.web_lc.name}" #if name of launch configuration changes, ASG will be replaced. We created a dependency.
+  name                 = "ASG - ${aws_launch_configuration.web_lc.name}" #if name of launch configuration changes, ASG will be replaced. We created a dependency.
   launch_configuration = aws_launch_configuration.web_lc.name
   min_size             = 2
   max_size             = 2
