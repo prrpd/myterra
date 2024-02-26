@@ -12,7 +12,6 @@ provider "aws" {
     tags = {
       Owner     = "terra-test"
       ManagedBy = "Terraform"
-      timestamp = timestamp()
     }
   }
 }
@@ -34,36 +33,74 @@ resource "aws_vpc_peering_connection" "foo" {
 
 resource "aws_vpc" "vpc1" {
   cidr_block = "10.1.0.0/16"
-}
-
-resource "aws_vpc" "vpc2" {
-  cidr_block = "10.2.0.0/16"
+  tags = {
+    Name = "test vpc peering"
+  }
 }
 
 resource "aws_subnet" "subnet1" {
   vpc_id     = aws_vpc.vpc1.id
   cidr_block = "10.1.1.0/24"
+  tags = {
+    Name = "test vpc peering"
+  }
+}
+
+resource "aws_vpc" "vpc2" {
+  cidr_block = "10.2.0.0/16"
+  tags = {
+    Name = "test vpc peering"
+  }
 }
 
 resource "aws_subnet" "subnet2" {
-  vpc_id     = aws_vpc.vpc1.id
-  cidr_block = "10.1.2.0/24"
+  vpc_id     = aws_vpc.vpc2.id
+  cidr_block = "10.2.1.0/24"
+  tags = {
+    Name = "test vpc peering"
+  }
 }
+
 resource "aws_instance" "vm1" {
   ami                    = data.aws_ami.ami_ubuntu_22_04_latest.id
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.subnet1.id
   vpc_security_group_ids = [aws_security_group.sg1.id]
+  tags = {
+    Name = "test vpc peering"
+  }
 }
 
 resource "aws_instance" "vm2" {
   ami                    = data.aws_ami.ami_ubuntu_22_04_latest.id
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.subnet2.id
-  vpc_security_group_ids = [aws_security_group.sg1.id]
+  vpc_security_group_ids = [aws_security_group.sg2.id]
+  tags = {
+    Name = "test vpc peering"
+  }
 }
 
 resource "aws_security_group" "sg1" {
+  name_prefix = "EC2_INSTANCE_CONNECT_"
+  vpc_id      = aws_vpc.vpc1.id
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["3.16.146.0/29"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "sg2" {
+  name_prefix = "EC2_INSTANCE_CONNECT_"
+  vpc_id      = aws_vpc.vpc2.id
   ingress {
     from_port   = 22
     to_port     = 22
