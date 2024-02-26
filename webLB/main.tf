@@ -19,8 +19,8 @@ data "aws_ami" "ami_ubuntu_22_04_latest" {
   }
 }
 
-resource "aws_security_group" "sg_web" {
-  name = "SG web"
+resource "aws_security_group" "elb_web_sg" {
+  name_prefix = "elb_web_sg - "
   dynamic "ingress" {
     for_each = ["80", "443"]
     content {
@@ -38,11 +38,30 @@ resource "aws_security_group" "sg_web" {
   }
 }
 
-resource "aws_launch_configuration" "lc_web" {
+resource "aws_security_group" "ec2_web_sg" {
+  name_prefix = "ec2_web_sg - "
+  dynamic "ingress" {
+    for_each = ["80", "443"]
+    content {
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_launch_configuration" "web_lc" {
   name_prefix     = "LC web - "
   instance_type   = "t2.micro"
   image_id        = data.aws_ami.ami_ubuntu_22_04_latest.id
-  security_groups = [aws_security_group.SG_web.id]
+  security_groups = [aws_security_group.elb_web_sg.id]
   user_data       = file("apache.sh")
 
   lifecycle {
@@ -52,8 +71,8 @@ resource "aws_launch_configuration" "lc_web" {
 }
 
 resource "aws_autoscaling_group" "asg_web" {
-  name                 = "ASG-${aws_launch_configuration.lc_web.name}"
-  launch_configuration = aws_launch_configuration.lc_web.name
+  name                 = "ASG-${aws_launch_configuration.web_lc.name}"
+  launch_configuration = aws_launch_configuration.web_lc.name
   min_size             = 2
   max_size             = 2
   health_check_type    = "ELB"
@@ -69,7 +88,7 @@ resource "aws_autoscaling_group" "asg_web" {
 resource "aws_elb" "web-elb" {
   name               = "web-elb"
   availability_zones = [data.aws_availability_zones.az_zones.names[0], data.aws_availability_zones.az_zones.names[1]]
-  security_groups    = [aws_security_group.sg_web.id]
+  security_groups    = [aws_security_group.elb_web_sg.id]
 
   listener {
     instance_port     = 80
