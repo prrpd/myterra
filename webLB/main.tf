@@ -38,17 +38,15 @@ resource "aws_security_group" "elb_web_sg" {
   }
 }
 
-/*
-resource "aws_security_group" "ec2_web_sg" {
-  name_prefix = "ec2_web_sg - "
-  dynamic "ingress" {
-    for_each = ["80", "443"]
-    content {
-      from_port   = ingress.value
-      to_port     = ingress.value
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
+
+resource "aws_security_group" "ec2_web_sg" { #allow traffic to instances from ELB only
+  name        = "ec2_web_sg"
+  description = "allow access for ELB"
+  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.elb_web_sg.id]
   }
   egress {
     from_port   = 0
@@ -57,12 +55,12 @@ resource "aws_security_group" "ec2_web_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-*/
+
 resource "aws_launch_configuration" "web_lc" {
   name_prefix     = "LC web - "
   instance_type   = "t2.micro"
   image_id        = data.aws_ami.ami_ubuntu_22_04_latest.id
-  security_groups = [aws_security_group.elb_web_sg.id]
+  security_groups = [aws_security_group.ec2_web_sg.id]
   user_data       = file("apache.sh")
 
   lifecycle {
@@ -111,7 +109,7 @@ resource "aws_elb" "web-elb" {
   }
 }
 
-resource "aws_default_subnet" "default_az1" {
+resource "aws_default_subnet" "default_az1" { # для ВМок за балансировщиком публичные IP не нужны, поэтому лучше их не назначать. А назначение настраивается в subnet, в этом ресурсе не получится такое настроить, поэтому, возможно, лучше сделать новые сабнеты и там настроить
   availability_zone = data.aws_availability_zones.az_zones.names[0]
 }
 
