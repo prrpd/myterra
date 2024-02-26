@@ -1,3 +1,11 @@
+/*
+web server creation through autoscalling group
+traffic through elastic lb
+FW rule to acces ELB from iutside, instances accessible only for ELB
+
+to do:
+remove public IPs from instances
+*/
 provider "aws" {
   region = "us-east-2"
   default_tags {
@@ -20,7 +28,7 @@ data "aws_ami" "ami_ubuntu_22_04_latest" {
 }
 
 resource "aws_security_group" "elb_web_sg" {
-  name_prefix = "elb_web_sg - "
+  name = "elb_web_sg"
   dynamic "ingress" {
     for_each = ["80", "443"]
     content {
@@ -38,7 +46,6 @@ resource "aws_security_group" "elb_web_sg" {
   }
 }
 
-#allow traffic to instances from ELB only
 resource "aws_security_group" "ec2_web_sg" {
   name        = "ec2_web_sg"
   description = "allow access for ELB"
@@ -46,7 +53,7 @@ resource "aws_security_group" "ec2_web_sg" {
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
-    security_groups = [aws_security_group.elb_web_sg.id]
+    security_groups = [aws_security_group.elb_web_sg.id] #allow traffic to instances from ELB only
   }
   egress {
     from_port   = 0
@@ -66,11 +73,10 @@ resource "aws_launch_configuration" "web_lc" {
   lifecycle {
     create_before_destroy = true
   }
-
 }
 
 resource "aws_autoscaling_group" "asg_web" {
-  name                 = "ASG-${aws_launch_configuration.web_lc.name}"
+  name                 = "ASG-${aws_launch_configuration.web_lc.name}" #if name of launch configuration changes, ASG will be replaced. We created a dependency.
   launch_configuration = aws_launch_configuration.web_lc.name
   min_size             = 2
   max_size             = 2
@@ -79,6 +85,18 @@ resource "aws_autoscaling_group" "asg_web" {
   min_elb_capacity     = 2
   vpc_zone_identifier  = [aws_default_subnet.default_az1.id, aws_default_subnet.default_az2.id]
 
+  #tags for EC2 instances, that are created for ASG
+  dynamic "tag" {
+    for_each = {
+      Name      = "webserver for ASG"
+      timestamp = timestamp()
+    }
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = true
+    }
+  }
   lifecycle {
     create_before_destroy = true
   }
