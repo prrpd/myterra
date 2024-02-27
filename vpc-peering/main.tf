@@ -40,6 +40,7 @@ resource "aws_vpc" "vpc1" {
   }
 }
 
+/*
 resource "aws_route_table" "route1" {
   vpc_id = aws_vpc.vpc1.id
   route {
@@ -55,15 +56,38 @@ resource "aws_route_table" "route1" {
     Name = "test vpc peering"
   }
 }
+*/
+
+resource "aws_default_route_table" "route1" {
+  default_route_table_id = aws_vpc.vpc1.default_route_table_id
+
+  route {
+    cidr_block = "10.2.1.0/24"
+    gateway_id = aws_vpc_peering_connection.foo.id
+  }
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.ig1.id
+  }
+  tags = {
+    Name = "test vpc peering"
+  }
+}
 
 resource "aws_subnet" "subnet1" {
   vpc_id                  = aws_vpc.vpc1.id
   cidr_block              = "10.1.1.0/24"
   map_public_ip_on_launch = true
+
   tags = {
     Name = "test vpc peering"
   }
 }
+
+# resource "aws_route_table_association" "a" {
+#   subnet_id      = aws_subnet.subnet1.id
+#   route_table_id = aws_route_table.route1.id
+# }
 
 resource "aws_vpc" "vpc2" {
   cidr_block = "10.2.0.0/16"
@@ -71,9 +95,26 @@ resource "aws_vpc" "vpc2" {
     Name = "test vpc peering"
   }
 }
-
+/*
 resource "aws_route_table" "route2" {
   vpc_id = aws_vpc.vpc2.id
+  route {
+    cidr_block = "10.1.1.0/24"
+    gateway_id = aws_vpc_peering_connection.foo.id
+  }
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.ig2.id
+  }
+
+  tags = {
+    Name = "test vpc peering"
+  }
+}
+*/
+resource "aws_default_route_table" "route2" {
+  default_route_table_id = aws_vpc.vpc2.default_route_table_id
+
   route {
     cidr_block = "10.1.1.0/24"
     gateway_id = aws_vpc_peering_connection.foo.id
@@ -96,6 +137,11 @@ resource "aws_subnet" "subnet2" {
     Name = "test vpc peering"
   }
 }
+
+# resource "aws_route_table_association" "b" {
+#   subnet_id      = aws_subnet.subnet2.id
+#   route_table_id = aws_route_table.route2.id
+# }
 
 resource "aws_instance" "vm1" {
   ami                    = data.aws_ami.ami_ubuntu_22_04_latest.id
@@ -126,6 +172,13 @@ resource "aws_security_group" "sg1" {
     protocol    = "tcp"
     cidr_blocks = ["3.16.146.0/29"]
   }
+  ingress {
+    description = "Allow all incoming ICMP IPv4 traffic"
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["10.0.0.0/8"]
+  }
   egress {
     from_port   = 0
     to_port     = 0
@@ -143,10 +196,17 @@ resource "aws_security_group" "sg2" {
     protocol    = "tcp"
     cidr_blocks = ["3.16.146.0/29"]
   }
+  ingress {
+    description = "Allow all incoming ICMP IPv4 traffic"
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["10.0.0.0/8"]
+  }
   egress {
     from_port   = 0
     to_port     = 0
-    protocol    = "tcp"
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
