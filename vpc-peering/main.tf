@@ -16,6 +16,7 @@ provider "aws" {
   }
 }
 
+#data --------------------------
 data "aws_ami" "ami_ubuntu_22_04_latest" {
   most_recent = true
   owners      = ["099720109477"]
@@ -24,6 +25,7 @@ data "aws_ami" "ami_ubuntu_22_04_latest" {
     values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
   }
 }
+#---------------------------------------
 
 resource "aws_vpc_peering_connection" "foo" {
   peer_vpc_id = aws_vpc.vpc1.id #Accepter 
@@ -33,6 +35,22 @@ resource "aws_vpc_peering_connection" "foo" {
 
 resource "aws_vpc" "vpc1" {
   cidr_block = "10.1.0.0/16"
+  tags = {
+    Name = "test vpc peering"
+  }
+}
+
+resource "aws_route_table" "route1" {
+  vpc_id = aws_vpc.vpc1.id
+  route {
+    cidr_block = "10.2.1.0/24"
+    gateway_id = aws_vpc_peering_connection.foo.id
+  }
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.ig1.id
+  }
+
   tags = {
     Name = "test vpc peering"
   }
@@ -49,6 +67,22 @@ resource "aws_subnet" "subnet1" {
 
 resource "aws_vpc" "vpc2" {
   cidr_block = "10.2.0.0/16"
+  tags = {
+    Name = "test vpc peering"
+  }
+}
+
+resource "aws_route_table" "route2" {
+  vpc_id = aws_vpc.vpc2.id
+  route {
+    cidr_block = "10.1.1.0/24"
+    gateway_id = aws_vpc_peering_connection.foo.id
+  }
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.ig2.id
+  }
+
   tags = {
     Name = "test vpc peering"
   }
@@ -114,5 +148,19 @@ resource "aws_security_group" "sg2" {
     to_port     = 0
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_internet_gateway" "ig1" {
+  vpc_id = aws_vpc.vpc1.id
+  tags = {
+    Name = "test vpc peering"
+  }
+}
+
+resource "aws_internet_gateway" "ig2" {
+  vpc_id = aws_vpc.vpc2.id
+  tags = {
+    Name = "test vpc peering"
   }
 }
