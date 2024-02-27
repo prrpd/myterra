@@ -175,6 +175,7 @@ resource "aws_security_group" "sg1" {
   name_prefix = "EC2_INSTANCE_CONNECT_"
   vpc_id      = aws_vpc.vpc1.id
   ingress {
+    description = "Allow SSH for AWS console EC2_INSTANCE_CONNECT"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -199,6 +200,7 @@ resource "aws_security_group" "sg2" {
   name_prefix = "EC2_INSTANCE_CONNECT_"
   vpc_id      = aws_vpc.vpc2.id
   ingress {
+    description = "Allow SSH for AWS console EC2_INSTANCE_CONNECT"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
