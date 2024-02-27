@@ -1,10 +1,13 @@
 /*
-web server creation through autoscalling group
-traffic through elastic lb
-FW rule to acces ELB from iutside, instances accessible only for ELB
+creating 2 vpcs, configuring peering between them
+also creating subnets, route eables, internet gateway.
+Internet gateway is needed only for ssh connection through 
+AWS console, it requires access from public internet, alsom this 
+is why EC2 instances have public IPs. If I configured local ssh connection,
+no public IPs, IGs and security rules to access from internet required.
 
 to do:
-remove public IPs from instances
+
 */
 provider "aws" {
   region = "us-east-2"
@@ -58,6 +61,11 @@ resource "aws_route_table" "route1" {
 }
 */
 
+/*
+instead of creating a new route table with aws_route_table,
+I'm taking into control using aws_default_route_table
+default route table which is automatially created with creation of a vpc
+*/
 resource "aws_default_route_table" "route1" {
   default_route_table_id = aws_vpc.vpc1.default_route_table_id
 
