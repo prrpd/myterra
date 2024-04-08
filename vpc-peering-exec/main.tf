@@ -160,9 +160,15 @@ resource "aws_instance" "vm1" {
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.subnet1.id
   vpc_security_group_ids = [aws_security_group.sg1.id]
-  provisioner "local-exec" {
-    command = "hostname; sleep 30; ping -4c5 ${aws_instance.vm2.private_ip}"
-  }
+  #remote-exec requires connection to the instance - 
+  #https://developer.hashicorp.com/terraform/language/resources/provisioners/remote-exec
+  # provisioner "remote-exec" {
+  #   inline = [
+  #     "hostname",
+  #     "sleep 10",
+  #     "ping -4c5 ${aws_instance.vm2.private_ip}",
+  #   ]
+  # }
   tags = {
     Name = "test vpc peering"
   }
